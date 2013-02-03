@@ -9,6 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import universalelectricity.prefab.implement.IUEMod;
+import universalelectricity.prefab.updater.UpdateManager;
+
 import net.minecraft.entity.player.EntityPlayer;
 import cpw.mods.fml.common.FMLLog;
 import cpw.mods.fml.common.IPlayerTracker;
@@ -35,6 +38,8 @@ public class UpdateNotifier implements IPlayerTracker
 	/**
 	 * Call this in your FML Pre-Initialize Event.
 	 * 
+	 * @deprecated Use {@link #checkUpdate(IUEMod)} instead
+	 * 
 	 * @param modName The name of your mod.
 	 * @param currentVersion The current version of your mod.
 	 * @param updateUrl The web address of your text file containing the latest version number.
@@ -57,8 +62,25 @@ public class UpdateNotifier implements IPlayerTracker
 
 		return latestUpdate;
 	}
+	
+	/**
+	 * Call this in your FML Pre-Initialize Event.
+	 * 
+	 * @param modName Your mod object implementing IUEMod.
+	 */
+	public void checkUpdate(IUEMod mod)
+	{
+		if(!isInitialized)
+		{
+			UpdateManager manager = new UpdateManager(mod);
+			GameRegistry.registerPlayerTracker(manager);
+			isInitialized = true;
+		}
+	}
 
 	/**
+	 * @deprecated Don't use this.
+	 * 
 	 * Allows you to check for updates for your mod.
 	 * 
 	 * @param updateUrl The web address of your text file containing the latest version number.

@@ -4,6 +4,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import universalelectricity.prefab.UpdateNotifier;
+import universalelectricity.prefab.implement.IUEMod;
+
 import net.minecraft.block.material.MapColor;
 import net.minecraft.block.material.Material;
 import net.minecraftforge.common.Configuration;
@@ -66,20 +69,23 @@ public class UniversalElectricity
 	public static final List<Object> mods = new ArrayList<Object>();
 
 	/**
+	 * @deprecated Replaced by {@link #register(IUEMod)}
+	 * 
 	 * You must register your mod with Universal Electricity. Call this in your mod's
 	 * pre-initialization stage.
 	 */
 	public static void register(Object mod, int major, int minor, int revision, boolean strict)
 	{
-		if (MAJOR_VERSION != major) { throw new RuntimeException("A Universal Electricity mod is way too old! Make sure it is update to v" + major + "." + minor + "." + revision); }
-
-		if (MINOR_VERSION < minor) { throw new RuntimeException("A Universal Electricity mod is too old! Make sure it is update to v" + major + "." + minor + "." + revision); }
+		if ((MAJOR_VERSION > major) || (MINOR_VERSION > minor))
+			FMLLog.warning(mod.getClass().getSimpleName() + "is older than your version of Universal Electricity. It is recommended to update to v" + VERSION);
+		else if((MAJOR_VERSION < major) || (MINOR_VERSION < minor))
+			throw new RuntimeException(mod.getClass().getSimpleName() + " is too new for your UE version! Update UniversalElectricity to v" + major + "." + minor + "." + revision);
 
 		if (REVISION_VERSION < revision)
 		{
 			if (strict)
 			{
-				throw new RuntimeException("A Universal Electricity mod is too old! Require v" + major + "." + minor + "." + revision);
+				throw new RuntimeException(mod.getClass().getSimpleName() + " is too old! Requires v" + VERSION);
 			}
 			else
 			{
@@ -93,31 +99,54 @@ public class UniversalElectricity
 
 		UELoader.INSTANCE.initiate();
 	}
+	
+	/**
+	 * You must register your mod with Universal Electricity. Call this in your mod's
+	 * pre-initialization stage.
+	 */
+	public static void register(IUEMod mod)
+	{
+		if ((MAJOR_VERSION > mod.getMajorVersion()) || (MINOR_VERSION > mod.getMinorVersion()))
+			FMLLog.warning(mod.getClass().getSimpleName() + "is older than your version of Universal Electricity. It is recommended to update to v" + VERSION);
+		else if((MAJOR_VERSION < mod.getMajorVersion()) || (MINOR_VERSION < mod.getMinorVersion()))
+			throw new RuntimeException(mod.getClass().getSimpleName() + " is too new for your UE version! Update UniversalElectricity to v" + mod.getVersion());
+
+		if (REVISION_VERSION < mod.getRevision())
+		{
+			if (mod.isStrict())
+				throw new RuntimeException("A Universal Electricity mod is too old! Require v" + VERSION);
+			else
+				FMLLog.warning("The version of Universal Electricity detected is not the recommended version by the mod. Odd things might happen. Recommended to try v" + mod.getVersion());
+		}
+	}
 
 	/**
 	 * A function that allows you to lock your mod to a specific version of Forge.
 	 */
 	public static void forgeLock(int major, int minor, int revision, boolean strict)
 	{
-		if (ForgeVersion.getMajorVersion() != major) { throw new RuntimeException("Universal Electricity: Wrong Minecraft Forge version! Require " + major + "." + minor + "." + revision); }
-
-		if (ForgeVersion.getMinorVersion() < minor) { throw new RuntimeException("Universal Electricity: Minecraft Forge minor version is too old! Require " + major + "." + minor + "." + revision); }
+		if (ForgeVersion.getMajorVersion() != major) 
+			throw new RuntimeException("Universal Electricity: Wrong Minecraft Forge version! Require " + major + "." + minor + "." + revision); 
+		
+		if (ForgeVersion.getMinorVersion() < minor) 
+			throw new RuntimeException("Universal Electricity: Minecraft Forge minor version is too old! Require " + major + "." + minor + "." + revision);
 
 		if (ForgeVersion.getRevisionVersion() < revision)
 		{
 			if (strict)
-			{
 				throw new RuntimeException("Universal Electricity: Minecraft Forge revision version is too old! Require " + major + "." + minor + "." + revision);
-			}
 			else
-			{
 				System.out.println("Universal Electricity Warning: Minecraft Forge is not the specified version. Odd things might happen. Require " + major + "." + minor + "." + revision);
-			}
 		}
 	}
 
 	public static void forgeLock(int major, int minor, int revision)
 	{
 		forgeLock(major, minor, revision, false);
+	}
+	
+	public static void forgeLock(IUEMod mod)
+	{
+		forgeLock(mod.getMajorVersion(), mod.getMinorVersion(), mod.getRevision(), mod.isStrict());
 	}
 }
